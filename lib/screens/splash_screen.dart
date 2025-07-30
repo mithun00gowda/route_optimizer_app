@@ -1,6 +1,8 @@
-import 'dart:async'; // Required for Timer
 import 'package:flutter/material.dart';
-import 'homescreen.dart'; // Import your HomeScreen
+import 'package:optiroute/screens/homescreen.dart';
+import 'package:optiroute/screens/login_screen.dart';
+import 'package:optiroute/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,47 +15,64 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Start a timer that navigates to the HomeScreen after 5 seconds
-    Timer(const Duration(seconds: 5), () {
-      // Ensure the widget is still mounted before navigating
-      if (mounted) {
+    _checkAuthStatusAndNavigate();
+  }
+
+  Future<void> _checkAuthStatusAndNavigate() async {
+    // Wait for AuthService to finish auto-login attempt
+    await Provider.of<AuthService>(context, listen: false).isLoading; // Await initial loading state
+
+    // Now check the authentication status
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    // Give it a small delay for splash screen effect
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) {
+      if (authService.isAuthenticated) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the theme's color scheme for consistent styling
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    // Use the theme's colors for the splash screen
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.primary, // Use primary color for splash background
+      backgroundColor: colorScheme.primary, // Primary color background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Your app logo or a prominent icon
+            // Your app logo/icon
             Icon(
-              Icons.alt_route, // Example icon, you can replace with an Image.asset for a logo
-              size: 100,
-              color: colorScheme.onPrimary, // Icon color contrasting with primary background
+              Icons.alt_route, // Example icon, replace with your actual logo
+              size: 150,
+              color: colorScheme.onPrimary, // Icon color contrasting with background
             ),
             const SizedBox(height: 20),
             Text(
               'OptiRoute',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: colorScheme.onPrimary, // Text color contrasting with primary background
+              style: TextStyle(
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimary, // Text color contrasting with background
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              'Smart Navigation for Safer Journeys',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onPrimary.withOpacity(0.8), // Subtitle with slight transparency
+              'Your Smart Route Companion',
+              style: TextStyle(
+                fontSize: 18,
+                color: colorScheme.onPrimary.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 50),
