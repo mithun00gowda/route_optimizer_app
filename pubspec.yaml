@@ -47,6 +47,7 @@ dependencies:
   jwt_decoder:
   image_picker:
   url_launcher:
+  geocoding:
 
 dev_dependencies:
   flutter_test:

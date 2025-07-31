@@ -1,3 +1,5 @@
+// lib/services/auth_service.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,7 +13,7 @@ class User {
   final String username;
   final String publicId;
   final String role;
-  String accessToken; // This will be updated on refresh
+  String accessToken;
   String refreshToken;
 
   User({
@@ -23,7 +25,6 @@ class User {
     required this.refreshToken,
   });
 
-  // Helper to create a new User object with updated token
   User copyWith({
     String? email,
     String? username,
@@ -44,24 +45,89 @@ class User {
 }
 
 class AuthService extends ChangeNotifier {
-  // TODO: Replace with your actual backend URL (e.g., 'http://192.168.1.X:5000')
   final String _baseUrl = StringsData.BASE_URL;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   User? _currentUser;
-  bool _isLoading = false;
+  bool _isLoading = true; // Start as true, as we immediately begin checking auth
+  late Future<void> _initializationFuture; // New: stores the initial check future
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
   bool get isLoading => _isLoading;
 
   AuthService() {
-    _attemptAutoLogin();
+    // Initialize the future directly in the constructor
+    // This starts the async process immediately, but doesn't block the constructor.
+    _initializationFuture = _initializeAuth();
   }
+
+  // New private method to handle initial auth check
+  Future<void> _initializeAuth() async {
+    // No _setLoading(true) here, as _isLoading starts as true.
+    // This also prevents notifyListeners during the very first build.
+    try {
+      final tokens = await _getTokens();
+      final accessToken = tokens['access_token'];
+      final refreshToken = tokens['refresh_token'];
+
+      if (accessToken != null && refreshToken != null) {
+        if (JwtDecoder.isExpired(accessToken)) {
+          print('Access token expired, attempting to refresh...');
+          final newAccessToken = await refreshAccessToken();
+          if (newAccessToken == null) {
+            print('Failed to refresh token during auto-login. Logging out.');
+            await _deleteTokens();
+            _currentUser = null;
+          } else {
+            final user = await _fetchAndSetUser(newAccessToken, refreshToken);
+            if (user != null) {
+              _currentUser = user;
+              print('Auto-login successful with refreshed token for user: ${_currentUser!.username}');
+            } else {
+              print('Failed to fetch user details after token refresh during auto-login. Logging out.');
+              await _deleteTokens();
+              _currentUser = null;
+            }
+          }
+        } else {
+          // Access token is still valid, fetch user details
+          final user = await _fetchAndSetUser(accessToken, refreshToken);
+          if (user != null) {
+            _currentUser = user;
+            print('Auto-login successful for user: ${_currentUser!.username}');
+          } else {
+            print('Failed to fetch user details during auto-login. Logging out.');
+            await _deleteTokens();
+            _currentUser = null;
+          }
+        }
+      } else {
+        print('No tokens found for auto-login.');
+        _currentUser = null;
+      }
+    } catch (e) {
+      print('Error during initial auth check: $e');
+      _currentUser = null; // Ensure user is null on error
+      await _deleteTokens(); // Clear any potentially bad tokens
+    } finally {
+      _isLoading = false; // Mark loading as complete
+      notifyListeners(); // Now it's safe to notify as the initial build is likely over.
+    }
+  }
+
+
+  // This method is now only a getter for the initialization future.
+  // The logic for checking auth happens inside _initializeAuth().
+  Future<void> get checkAuthStatusFuture => _initializationFuture;
+
+  // Other methods remain largely the same, but remove _setLoading(true) from the very start
+  // of operations that are *part* of the initial check.
+  // For login/logout/register, _setLoading(true) is fine because it's user-triggered and not part of the initial app load.
 
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
+    notifyListeners(); // This is now always safe to call after initial setup.
   }
 
   Future<void> _saveTokens(String accessToken, String refreshToken) async {
@@ -80,11 +146,10 @@ class AuthService extends ChangeNotifier {
     return {'access_token': accessToken, 'refresh_token': refreshToken};
   }
 
-  // Fetches full user details using the access token from the /me endpoint
   Future<User?> _fetchAndSetUser(String accessToken, String refreshToken) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/auth/me'), // Now correctly points to the /me endpoint
+        Uri.parse('$_baseUrl/auth/me'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
@@ -111,53 +176,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Attempts to log in automatically using stored tokens
-  Future<void> _attemptAutoLogin() async {
-    _setLoading(true);
-    final tokens = await _getTokens();
-    final accessToken = tokens['access_token'];
-    final refreshToken = tokens['refresh_token'];
-
-    if (accessToken != null && refreshToken != null) {
-      // Check if access token is expired
-      if (JwtDecoder.isExpired(accessToken)) {
-        print('Access token expired, attempting to refresh...');
-        final newAccessToken = await refreshAccessToken();
-        if (newAccessToken == null) {
-          print('Failed to refresh token. Logging out.');
-          await _deleteTokens();
-          _currentUser = null;
-          _setLoading(false);
-          return;
-        }
-        // Use the new access token for fetching user details
-        final user = await _fetchAndSetUser(newAccessToken, refreshToken);
-        if (user != null) {
-          _currentUser = user;
-          print('Auto-login successful with refreshed token for user: ${_currentUser!.username}');
-        } else {
-          print('Failed to fetch user details after token refresh. Logging out.');
-          await _deleteTokens();
-          _currentUser = null;
-        }
-      } else {
-        // Access token is still valid, fetch user details
-        final user = await _fetchAndSetUser(accessToken, refreshToken);
-        if (user != null) {
-          _currentUser = user;
-          print('Auto-login successful for user: ${_currentUser!.username}');
-        } else {
-          print('Failed to fetch user details during auto-login. Logging out.');
-          await _deleteTokens();
-          _currentUser = null;
-        }
-      }
-    } else {
-      print('No tokens found for auto-login.');
-    }
-    _setLoading(false);
-  }
-
   Future<String?> login(String username, String password) async {
     _setLoading(true);
     try {
@@ -179,11 +197,11 @@ class AuthService extends ChangeNotifier {
         final String email = responseData['email'];
         final String refreshToken = responseData['refresh_token'];
         final String role = responseData['role'];
-        final String username = responseData['username']; // Now available from Flask login
-        final String publicId = responseData['public_id']; // Now available from Flask login
+        final String username = responseData['username'];
+        final String publicId = responseData['public_id'];
 
         _currentUser = User(
-          email: email, // Use provided email from input
+          email: email,
           username: username,
           publicId: publicId,
           role: role,
@@ -232,10 +250,9 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Method to refresh the access token using the refresh token
   Future<String?> refreshAccessToken() async {
     if (_currentUser == null || _currentUser!.refreshToken.isEmpty) {
-      print('No refresh token available.');
+      print('No current user or refresh token available for refresh.');
       return null;
     }
 
@@ -252,8 +269,6 @@ class AuthService extends ChangeNotifier {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final String newAccessToken = responseData['access_token'];
 
-        // Update current user's access token and save to secure storage
-        // Note: Flask-JWT-Extended refresh endpoint only returns new access token, not new refresh token
         _currentUser = _currentUser!.copyWith(accessToken: newAccessToken);
         await _secureStorage.write(key: 'jwt_access_token', value: newAccessToken);
 
@@ -262,7 +277,7 @@ class AuthService extends ChangeNotifier {
         return newAccessToken;
       } else {
         print('Failed to refresh token: ${response.statusCode} ${response.body}');
-        await _deleteTokens(); // Clear tokens if refresh fails
+        await _deleteTokens();
         _currentUser = null;
         notifyListeners();
         return null;

@@ -1,116 +1,232 @@
+// lib/main.dart
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:optiroute/screens/admin/admin_dashboard_screen.dart'; // Admin Dashboard
+import 'package:provider/provider.dart';
+
+import 'package:optiroute/screens/admin/admin_login_screen.dart'; // Admin Login for Web
 import 'package:optiroute/screens/splash_screen.dart';
-import 'package:optiroute/services/auth_service.dart'; // Import AuthService
-import 'package:provider/provider.dart'; // Import provider
+import 'package:optiroute/services/auth_service.dart';
+import 'package:optiroute/screens/login_screen.dart'; // Import your mobile LoginScreen
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
-  runApp(
-    ChangeNotifierProvider( // Provide AuthService globally
-      create: (context) => AuthService(),
-      child: const MyApp(),
-    ),
-  );
-}
-
+// MyApp (Mobile)
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context); // Get the service instance
+
     return MaterialApp(
       title: 'OptiRoute',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.light,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4CAF50), // A shade of green
-          primary: const Color(0xFF4CAF50), // Primary green
-          secondary: const Color(0xFFFFA000), // Orange accent for secondary actions
-          tertiary: const Color(0xFF1976D2), // Blue for tertiary elements
-          error: const Color(0xFFD32F2F), // Red for errors
-          surface: Colors.white, // White for card backgrounds, etc.
+          seedColor: Colors.blue.shade700,
+          primary: Colors.blue.shade700,
           onPrimary: Colors.white,
-          onSecondary: Colors.black,
-          onTertiary: Colors.white,
+          secondary: Colors.teal.shade400,
+          onSecondary: Colors.white,
+          surface: Colors.white,
+          onSurface: Colors.grey.shade900,
+          background: Colors.grey.shade50,
+          onBackground: Colors.grey.shade900,
+          error: Colors.red.shade700,
           onError: Colors.white,
-          onSurface: Colors.black87,
         ),
-        textTheme: GoogleFonts.latoTextTheme(
+        textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme,
-        ).apply(
-          bodyColor: Colors.black87,
-          displayColor: Colors.black87,
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF4CAF50), // Primary green for app bars
-          foregroundColor: Colors.white, // White text/icons on app bar
-          elevation: 4,
-          shadowColor: Colors.black26,
-          titleTextStyle: GoogleFonts.lato(
+          backgroundColor: Colors.blue.shade700,
+          foregroundColor: Colors.white,
+          elevation: 4.0,
+          titleTextStyle: GoogleFonts.inter(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          margin: EdgeInsets.zero, // No default margin
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF4CAF50), width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFD32F2F)),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
-          ),
-          labelStyle: TextStyle(color: Colors.grey.shade600),
-          hintStyle: TextStyle(color: Colors.grey.shade400),
-        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.blue.shade600,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle: GoogleFonts.lato(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            elevation: 3,
-          ),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            textStyle: GoogleFonts.lato(
+            elevation: 3.0,
+            textStyle: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
+        cardTheme: CardThemeData(
+          elevation: 4.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
+          labelStyle: GoogleFonts.inter(color: Colors.grey.shade700),
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      home: FutureBuilder<void>(
+        future: authService.checkAuthStatusFuture, // Await the initial setup future
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting || authService.isLoading) {
+            // Show splash screen while initialization is in progress
+            return const SplashScreen(); // This is correct, always show splash during initial load
+          } else {
+            // After initialization, use Consumer to react to further auth changes
+            return Consumer<AuthService>(
+              builder: (context, authService, child) {
+                if (authService.isAuthenticated) {
+                  // Authenticated mobile user goes to Mobile Dashboard
+                  return const Text("Mobile Dashboard (Implement your mobile main screen here)");
+                } else {
+                  // Unauthenticated mobile user goes to the Mobile Login Screen
+                  return const LoginScreen(); // <-- CHANGED: Direct to LoginScreen for mobile
+                }
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+// AdminApp (Web)
+class AdminApp extends StatelessWidget {
+  const AdminApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context); // Get the service instance
+
+    return MaterialApp(
+      title: 'OptiRoute Admin',
       debugShowCheckedModeBanner: false,
-      home: const SplashScreen(), // Start with the SplashScreen
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple.shade700,
+          primary: Colors.deepPurple.shade700,
+          onPrimary: Colors.white,
+          secondary: Colors.teal.shade400,
+          onSecondary: Colors.white,
+          surface: Colors.white,
+          onSurface: Colors.grey.shade900,
+          background: Colors.grey.shade50,
+          onBackground: Colors.grey.shade900,
+          error: Colors.red.shade700,
+          onError: Colors.white,
+        ),
+        textTheme: GoogleFonts.interTextTheme(
+          Theme.of(context).textTheme,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.deepPurple.shade700,
+          foregroundColor: Colors.white,
+          elevation: 4.0,
+          titleTextStyle: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.deepPurple.shade600,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 3.0,
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 4.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          hintStyle: GoogleFonts.inter(color: Colors.grey.shade500),
+          labelStyle: GoogleFonts.inter(color: Colors.grey.shade700),
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: FutureBuilder<void>(
+        future: authService.checkAuthStatusFuture, // Await the initial setup future
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting || authService.isLoading) {
+            // Show loading indicator while initialization is in progress for web
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          } else {
+            // After initialization, use Consumer to react to further auth changes
+            return Consumer<AuthService>(
+              builder: (context, authService, child) {
+                if (authService.isAuthenticated) {
+                  return const AdminDashboardScreen();
+                } else {
+                  return const AdminLoginScreen(); // Web users go to AdminLoginScreen
+                }
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    runApp(
+      ChangeNotifierProvider(
+        create: (context) => AuthService(),
+        child: const AdminApp(), // AdminApp for web
+      ),
+    );
+  } else {
+    runApp(
+      ChangeNotifierProvider(
+        create: (context) => AuthService(),
+        child: const MyApp(), // MyApp for mobile
+      ),
     );
   }
 }

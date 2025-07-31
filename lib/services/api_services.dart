@@ -5,10 +5,9 @@ import 'package:optiroute/constants/strings.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart'; // Needed for BuildContext
 import '../models/models.dart';
-import 'auth_service.dart'; // Import AuthService
+import '../services/auth_service.dart' hide User; // Import AuthService
 
 class ApiService {
-  // TODO: Ensure this matches your Flask backend URL
   static final String _baseUrl = StringsData.BASE_URL;
 
   // Private helper to make authenticated requests
@@ -23,17 +22,13 @@ class ApiService {
     String? accessToken = authService.currentUser?.accessToken;
 
     if (accessToken == null) {
-      // If no token, attempt auto-login or redirect to login
-      // For now, we'll just throw an error. In a real app, you might
-      // navigate to login screen here.
       throw Exception('Authentication required. Please log in.');
     }
 
-    // Add Authorization header
     final Map<String, String> requestHeaders = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $accessToken',
-      ...?headers, // Merge any additional headers
+      ...?headers,
     };
 
     Uri uri = Uri.parse('$_baseUrl$endpoint');
@@ -66,12 +61,10 @@ class ApiService {
         throw Exception('Unsupported HTTP method: $method');
       }
 
-      // Handle token expiration / refresh
       if (response.statusCode == 401) {
         print('Received 401. Attempting to refresh token...');
         final newAccessToken = await authService.refreshAccessToken();
         if (newAccessToken != null) {
-          // Retry the original request with the new token
           print('Token refreshed, retrying request...');
           requestHeaders['Authorization'] = 'Bearer $newAccessToken';
           if (method == 'POST') {
@@ -84,10 +77,8 @@ class ApiService {
             response = await http.delete(uri, headers: requestHeaders);
           }
         } else {
-          // If refresh failed, force logout
           print('Token refresh failed. Logging out user.');
           await authService.logout();
-          // You might want to navigate to login screen here
           throw Exception('Session expired. Please log in again.');
         }
       }
@@ -95,7 +86,7 @@ class ApiService {
       return response;
     } catch (e) {
       print('Network request error: $e');
-      rethrow; // Re-throw to be caught by the calling function
+      rethrow;
     }
   }
 
@@ -103,7 +94,7 @@ class ApiService {
   // --- API Endpoints ---
 
   static Future<RoutePredictionResult> getRoutePrediction({
-    required BuildContext context, // Pass BuildContext to access Provider
+    required BuildContext context,
     required double startLat,
     required double startLon,
     required double endLat,
@@ -139,14 +130,13 @@ class ApiService {
     }
   }
 
-  // Method to report an accident (Multipart for files)
   static Future<Map<String, dynamic>> reportAccident({
     required BuildContext context,
     required double latitude,
     required double longitude,
     required String incidentType,
     String? description,
-    List<String>? mediaFilePaths, // List of file paths
+    List<String>? mediaFilePaths,
   }) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     String? accessToken = authService.currentUser?.accessToken;
@@ -168,9 +158,6 @@ class ApiService {
 
     if (mediaFilePaths != null && mediaFilePaths.isNotEmpty) {
       for (String path in mediaFilePaths) {
-        // http.MultipartFile.fromPath requires dart:io. If targeting web,
-        // you'll need a different approach (e.g., file_picker package for web)
-        // For mobile, this is fine.
         request.files.add(await http.MultipartFile.fromPath('media_files', path));
       }
     }
@@ -182,11 +169,9 @@ class ApiService {
       if (response.statusCode == 201) {
         return json.decode(response.body);
       } else if (response.statusCode == 401) {
-        // Attempt token refresh and retry if 401
         print('Received 401 for reportAccident. Attempting to refresh token...');
         final newAccessToken = await authService.refreshAccessToken();
         if (newAccessToken != null) {
-          // Retry the request with the new token
           request.headers['Authorization'] = 'Bearer $newAccessToken';
           final retryStreamedResponse = await request.send();
           final retryResponse = await http.Response.fromStream(retryStreamedResponse);
@@ -209,5 +194,157 @@ class ApiService {
     }
   }
 
-// TODO: Add other API methods here (e.g., get user's reported accidents, admin endpoints)
+  static Future<List<ReportedAccident>> getCurrentUserReportedAccidents(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/api/reported_accidents/mine',
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => ReportedAccident.fromJson(json)).toList();
+    } else {
+      final Map<String, dynamic> errorData = json.decode(response.body);
+      throw Exception('Failed to load user reported accidents: ${errorData['error'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static String getMediaFileUrl(String mediaPath) {
+    return '$_baseUrl/api/$mediaPath';
+  }
+
+  // --- Admin API Methods ---
+
+  static Future<AdminDashboardOverview> getAdminDashboardOverview(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/admin/dashboard/overview',
+    );
+    if (response.statusCode == 200) {
+      return AdminDashboardOverview.fromJson(json.decode(response.body));
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to load dashboard overview: ${errorData['msg'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<List<User>> getAllUsers(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/admin/users',
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return (data['users'] as List).map((json) => User.fromJson(json)).toList();
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to load users: ${errorData['msg'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateUserRole(BuildContext context, String publicId, String newRole) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'PUT',
+      '/admin/users/$publicId',
+      body: {'role': newRole},
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to update user role: ${errorData['message'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteUser(BuildContext context, String publicId) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'DELETE',
+      '/admin/users/$publicId',
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to delete user: ${errorData['message'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<List<AdminReportedAccident>> getAllReportedAccidents(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/admin/reported_accidents',
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return (data['reported_accidents'] as List).map((json) => AdminReportedAccident.fromJson(json)).toList();
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to load all reported accidents: ${errorData['msg'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateReportedAccidentStatus(BuildContext context, int accidentId, String newStatus) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'PUT',
+      '/admin/reported_accidents/$accidentId',
+      body: {'status': newStatus},
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to update accident status: ${errorData['message'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteReportedAccident(BuildContext context, int accidentId) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'DELETE',
+      '/admin/reported_accidents/$accidentId',
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to delete reported accident: ${errorData['message'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<List<TravelRate>> getUserTravelRates(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/admin/travel_analysis/user_rates',
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => TravelRate.fromJson(json)).toList();
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to load user travel rates: ${errorData['msg'] ?? response.reasonPhrase}');
+    }
+  }
+
+  static Future<List<DailyTrip>> getDailyTrips(BuildContext context) async {
+    final response = await _sendAuthenticatedRequest(
+      context,
+      'GET',
+      '/admin/travel_analysis/daily_trips',
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => DailyTrip.fromJson(json)).toList();
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to load daily trips: ${errorData['msg'] ?? response.reasonPhrase}');
+    }
+  }
 }
