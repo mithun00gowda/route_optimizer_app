@@ -4,12 +4,11 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/gestures.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:geocoding/geocoding.dart'; // Import geocoding
 
 import '../models/models.dart';
 import '../services/api_services.dart';
@@ -44,18 +43,22 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
 
   String _selectedVehicleType = 'car';
   final List<String> _vehicleTypes = ['car', 'motorcycle', 'truck', 'bus'];
-  final TextEditingController _histStartYearController = TextEditingController(text: '${DateTime.now().year - 5}');
-  final TextEditingController _histEndYearController = TextEditingController(text: '${DateTime.now().year - 1}');
+  final TextEditingController _histStartYearController =
+  TextEditingController(text: '${DateTime.now().year - 5}');
+  final TextEditingController _histEndYearController =
+  TextEditingController(text: '${DateTime.now().year - 1}');
 
   // New controllers for displaying location names and search input
-  final TextEditingController _startLocationNameController = TextEditingController();
-  final TextEditingController _endLocationNameController = TextEditingController();
-  final TextEditingController _searchDestinationController = TextEditingController();
+  final TextEditingController _startLocationNameController =
+  TextEditingController();
+  final TextEditingController _endLocationNameController =
+  TextEditingController();
+  final TextEditingController _searchDestinationController =
+  TextEditingController();
 
   // Flags to indicate if location is set by helper methods
   bool _isStartLocationSetByHelper = false;
   bool _isEndLocationSetByHelper = false;
-
 
   static const CameraPosition _initialCameraPosition = CameraPosition(
     target: LatLng(12.9716, 77.5946), // Bangalore, India
@@ -65,7 +68,13 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
   @override
   void initState() {
     super.initState();
-    _determinePosition(); // Get current location as default start
+    // **FIX:** Delay the location request until after the first frame is built.
+    // This prevents the app from crashing due to permission dialogs.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _determinePosition();
+      }
+    });
   }
 
   @override
@@ -89,7 +98,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
     }
   }
 
-  Future<void> _updateLocationFields(LatLng latLng, {bool isStart = true, String? locationName}) async {
+  Future<void> _updateLocationFields(LatLng latLng,
+      {bool isStart = true, String? locationName}) async {
     setState(() {
       if (isStart) {
         _startLatLng = latLng;
@@ -99,7 +109,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
             markerId: const MarkerId('start_point'),
             position: _startLatLng!,
             infoWindow: InfoWindow(title: locationName ?? 'Start Point'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+            icon:
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
           ),
         );
         _isStartLocationSetByHelper = true;
@@ -120,10 +131,12 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
 
     if (locationName == null) {
       try {
-        List<Placemark> placemarks = await placemarkFromCoordinates(latLng.latitude, latLng.longitude);
+        List<Placemark> placemarks =
+        await placemarkFromCoordinates(latLng.latitude, latLng.longitude);
         if (placemarks.isNotEmpty) {
           final placemark = placemarks.first;
-          final address = "${placemark.street}, ${placemark.locality}, ${placemark.administrativeArea}";
+          final address =
+              "${placemark.street}, ${placemark.locality}, ${placemark.administrativeArea}";
           setState(() {
             if (isStart) {
               _startLocationNameController.text = address;
@@ -147,16 +160,18 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
     }
   }
 
-
   void _onMapTap(LatLng tappedLatLng) async {
     if (_selectionState == LocationSelectionState.selectingStart) {
-      await _updateLocationFields(tappedLatLng, isStart: true, locationName: 'Picked Start Point');
+      await _updateLocationFields(tappedLatLng,
+          isStart: true, locationName: 'Picked Start Point');
       setState(() {
         _selectionState = LocationSelectionState.none;
       });
-      Fluttertoast.showToast(msg: 'Start point set. Select End Point or Get Routes.');
+      Fluttertoast.showToast(
+          msg: 'Start point set. Select End Point or Get Routes.');
     } else if (_selectionState == LocationSelectionState.selectingEnd) {
-      await _updateLocationFields(tappedLatLng, isStart: false, locationName: 'Picked End Point');
+      await _updateLocationFields(tappedLatLng,
+          isStart: false, locationName: 'Picked End Point');
       setState(() {
         _selectionState = LocationSelectionState.none;
       });
@@ -177,12 +192,18 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        Fluttertoast.showToast(msg: 'Location services are disabled. Please enable them.');
+        Fluttertoast.showToast(
+            msg: 'Location services are disabled. Please enable them.');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
         return;
       }
 
@@ -191,12 +212,20 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           Fluttertoast.showToast(msg: 'Location permissions are denied');
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        Fluttertoast.showToast(msg: 'Location permissions are permanently denied, we cannot request permissions.');
+        Fluttertoast.showToast(
+            msg:
+            'Location permissions are permanently denied, we cannot request permissions.');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
         return;
       }
 
@@ -204,20 +233,26 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
           desiredAccuracy: LocationAccuracy.high);
       final currentLatLng = LatLng(position.latitude, position.longitude);
 
-      await _updateLocationFields(currentLatLng, isStart: true, locationName: 'Your Current Location');
+      await _updateLocationFields(currentLatLng,
+          isStart: true, locationName: 'Your Current Location');
       _googleMapController?.animateCamera(
         CameraUpdate.newLatLngZoom(currentLatLng, 15.0),
       );
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error getting location: $e');
     } finally {
-      setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _searchDestinationPlace() async {
     if (_searchDestinationController.text.isEmpty) {
-      Fluttertoast.showToast(msg: 'Please enter a place to search for destination.');
+      Fluttertoast.showToast(
+          msg: 'Please enter a place to search for destination.');
       return;
     }
 
@@ -226,14 +261,17 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
     });
 
     try {
-      List<Location> locations = await locationFromAddress(_searchDestinationController.text);
+      List<Location> locations =
+      await locationFromAddress(_searchDestinationController.text);
       if (locations.isNotEmpty) {
         final location = locations.first;
         final LatLng foundLatLng = LatLng(location.latitude, location.longitude);
-        await _updateLocationFields(foundLatLng, isStart: false, locationName: _searchDestinationController.text);
+        await _updateLocationFields(foundLatLng,
+            isStart: false, locationName: _searchDestinationController.text);
         Fluttertoast.showToast(msg: 'Destination found and set.');
       } else {
-        Fluttertoast.showToast(msg: 'No location found for "${_searchDestinationController.text}"');
+        Fluttertoast.showToast(
+            msg: 'No location found for "${_searchDestinationController.text}"');
       }
     } catch (e) {
       Fluttertoast.showToast(msg: 'Error searching place: $e');
@@ -266,7 +304,6 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
     Fluttertoast.showToast(msg: 'End location cleared.');
   }
 
-
   Future<void> _getRoutes() async {
     FocusScope.of(context).unfocus(); // Close the keyboard
 
@@ -283,7 +320,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
       _polylines.clear();
       _predictionResult = null;
       _errorMessage = null;
-      _markers.retainWhere((m) => m.markerId.value == 'start_point' || m.markerId.value == 'end_point');
+      _markers.retainWhere(
+              (m) => m.markerId.value == 'start_point' || m.markerId.value == 'end_point');
     });
 
     try {
@@ -306,10 +344,14 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
             Polyline(
               polylineId: PolylineId('route_${route.routeId}'),
               points: route.geometryCoords.map((c) => c.toLatLng()).toList(),
-              color: route.routeId == result.bestRoute.routeId ? Colors.blue.shade700 : Colors.grey.withOpacity(0.6),
+              color: route.routeId == result.bestRoute.routeId
+                  ? Colors.blue.shade700
+                  : Colors.grey.withOpacity(0.6),
               width: route.routeId == result.bestRoute.routeId ? 6 : 4,
               zIndex: route.routeId == result.bestRoute.routeId ? 2 : 1,
-              patterns: route.routeId != result.bestRoute.routeId ? [PatternItem.dash(10), PatternItem.gap(10)] : [],
+              patterns: route.routeId != result.bestRoute.routeId
+                  ? [PatternItem.dash(10), PatternItem.gap(10)]
+                  : [],
             ),
           );
         }
@@ -320,9 +362,11 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
               position: accident.toLatLng(),
               infoWindow: InfoWindow(
                 title: 'Accident (${accident.severity?.toUpperCase() ?? 'N/A'})',
-                snippet: 'Type: ${accident.type ?? 'N/A'}, Delay: ${accident.simulatedDelayMinutes?.toStringAsFixed(1) ?? 'N/A'} min',
+                snippet:
+                'Type: ${accident.type ?? 'N/A'}, Delay: ${accident.simulatedDelayMinutes?.toStringAsFixed(1) ?? 'N/A'} min',
               ),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueOrange),
             )));
 
         _markers.addAll(result.simulatedHistoricalAccidents.map((accident) =>
@@ -330,15 +374,17 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
               markerId: MarkerId('hist_accident_${accident.id}'),
               position: accident.toLatLng(),
               infoWindow: InfoWindow(
-                title: 'Historical Acc. (${accident.severity?.toUpperCase() ?? 'N/A'})',
-                snippet: 'Type: ${accident.type ?? 'N/A'} (${accident.year ?? 'N/A'}, ${accident.locationName ?? 'N/A'})',
+                title:
+                'Historical Acc. (${accident.severity?.toUpperCase() ?? 'N/A'})',
+                snippet:
+                'Type: ${accident.type ?? 'N/A'} (${accident.year ?? 'N/A'}, ${accident.locationName ?? 'N/A'})',
               ),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueYellow),
             )));
       });
 
       _fitMapToRouteBounds(result);
-
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -346,7 +392,9 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
       Fluttertoast.showToast(msg: 'Failed to get routes: $_errorMessage');
       print("Error in _getRoutes: $e");
     } finally {
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -380,10 +428,13 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
       updateBounds(histAccident.toLatLng());
     }
 
-
-    if (minLat.isInfinite || minLon.isInfinite || maxLat.isInfinite || maxLon.isInfinite) {
+    if (minLat.isInfinite ||
+        minLon.isInfinite ||
+        maxLat.isInfinite ||
+        maxLon.isInfinite) {
       _googleMapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(_startLatLng ?? _initialCameraPosition.target, 10.0),
+        CameraUpdate.newLatLngZoom(
+            _startLatLng ?? _initialCameraPosition.target, 10.0),
       );
       return;
     }
@@ -400,26 +451,28 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
 
   Future<void> _launchGoogleMapsNavigation() async {
     if (_startLatLng == null || _endLatLng == null) {
-      Fluttertoast.showToast(msg: 'Please select both start and end points for navigation.');
+      Fluttertoast.showToast(
+          msg: 'Please select both start and end points for navigation.');
       return;
     }
 
     final String origin = '${_startLatLng!.latitude},${_startLatLng!.longitude}';
     final String destination = '${_endLatLng!.latitude},${_endLatLng!.longitude}';
-    final String travelMode = _selectedVehicleType == 'car' ? 'driving' : _selectedVehicleType;
+    final String travelMode =
+    _selectedVehicleType == 'car' ? 'driving' : _selectedVehicleType;
 
     final Uri googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=$travelMode&dir_action=navigate',
+      'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=$travelMode',
     );
 
     if (await canLaunchUrl(googleMapsUrl)) {
       await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
     } else {
-      Fluttertoast.showToast(msg: 'Could not launch Google Maps. Please ensure the app is installed.');
+      Fluttertoast.showToast(
+          msg: 'Could not launch Google Maps. Please ensure the app is installed.');
       print('Could not launch $googleMapsUrl');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -465,13 +518,14 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
             myLocationButtonEnabled: true,
             zoomControlsEnabled: true,
             onTap: _onMapTap,
-
             gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
               Factory<PanGestureRecognizer>(() => PanGestureRecognizer()),
               Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()),
               Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
-              Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
-              Factory<HorizontalDragGestureRecognizer>(() => HorizontalDragGestureRecognizer()),
+              Factory<VerticalDragGestureRecognizer>(
+                      () => VerticalDragGestureRecognizer()),
+              Factory<HorizontalDragGestureRecognizer>(
+                      () => HorizontalDragGestureRecognizer()),
             },
           ),
           if (_isLoading)
@@ -496,7 +550,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _startLocationNameController,
-                            readOnly: _isStartLocationSetByHelper, // Make read-only if set by helper
+                            readOnly:
+                            _isStartLocationSetByHelper, // Make read-only if set by helper
                             decoration: InputDecoration(
                               labelText: 'Start Location',
                               hintText: 'Tap on map or use buttons',
@@ -523,22 +578,33 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               onPressed: _isLoading ? null : _determinePosition,
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(12),
-                                minimumSize: const Size(48, 48), // Ensure button is not too small
+                                minimumSize: const Size(48,
+                                    48), // Ensure button is not too small
                               ),
                               child: const Icon(Icons.my_location),
                             ),
                             const SizedBox(height: 4),
                             ElevatedButton(
-                              onPressed: _isLoading || _selectionState == LocationSelectionState.selectingStart ? null : () {
+                              onPressed: _isLoading ||
+                                  _selectionState ==
+                                      LocationSelectionState.selectingStart
+                                  ? null
+                                  : () {
                                 setState(() {
-                                  _selectionState = LocationSelectionState.selectingStart;
+                                  _selectionState =
+                                      LocationSelectionState.selectingStart;
                                 });
-                                Fluttertoast.showToast(msg: 'Tap on map to select Start Point.');
+                                Fluttertoast.showToast(
+                                    msg:
+                                    'Tap on map to select Start Point.');
                               },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(12),
                                 minimumSize: const Size(48, 48),
-                                backgroundColor: _selectionState == LocationSelectionState.selectingStart ? Colors.blue.shade100 : null,
+                                backgroundColor: _selectionState ==
+                                    LocationSelectionState.selectingStart
+                                    ? Colors.blue.shade100
+                                    : null,
                               ),
                               child: const Icon(Icons.map),
                             ),
@@ -554,7 +620,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _endLocationNameController,
-                            readOnly: _isEndLocationSetByHelper, // Make read-only if set by helper
+                            readOnly:
+                            _isEndLocationSetByHelper, // Make read-only if set by helper
                             decoration: InputDecoration(
                               labelText: 'End Location',
                               hintText: 'Tap on map or search place',
@@ -578,7 +645,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                         Column(
                           children: [
                             ElevatedButton(
-                              onPressed: _isLoading ? null : _searchDestinationPlace,
+                              onPressed:
+                              _isLoading ? null : _searchDestinationPlace,
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(12),
                                 minimumSize: const Size(48, 48),
@@ -587,16 +655,26 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                             ),
                             const SizedBox(height: 4),
                             ElevatedButton(
-                              onPressed: _isLoading || _selectionState == LocationSelectionState.selectingEnd ? null : () {
+                              onPressed: _isLoading ||
+                                  _selectionState ==
+                                      LocationSelectionState.selectingEnd
+                                  ? null
+                                  : () {
                                 setState(() {
-                                  _selectionState = LocationSelectionState.selectingEnd;
+                                  _selectionState =
+                                      LocationSelectionState.selectingEnd;
                                 });
-                                Fluttertoast.showToast(msg: 'Tap on map to select End Point.');
+                                Fluttertoast.showToast(
+                                    msg:
+                                    'Tap on map to select End Point.');
                               },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(12),
                                 minimumSize: const Size(48, 48),
-                                backgroundColor: _selectionState == LocationSelectionState.selectingEnd ? Colors.blue.shade100 : null,
+                                backgroundColor: _selectionState ==
+                                    LocationSelectionState.selectingEnd
+                                    ? Colors.blue.shade100
+                                    : null,
                               ),
                               child: const Icon(Icons.map),
                             ),
@@ -617,7 +695,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                           suffixIcon: _isLoading
                               ? const Padding(
                             padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2),
                           )
                               : IconButton(
                             icon: const Icon(Icons.send),
@@ -631,7 +710,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedVehicleType,
                       decoration: const InputDecoration(
-                          labelText: 'Vehicle Type', border: OutlineInputBorder()),
+                          labelText: 'Vehicle Type',
+                          border: OutlineInputBorder()),
                       items: _vehicleTypes.map((String type) {
                         return DropdownMenuItem<String>(
                           value: type,
@@ -650,11 +730,14 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _histStartYearController,
-                            decoration: const InputDecoration(labelText: 'Hist Start Year', border: OutlineInputBorder()),
+                            decoration: const InputDecoration(
+                                labelText: 'Hist Start Year',
+                                border: OutlineInputBorder()),
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value!.isEmpty) return 'Enter year';
-                              if (int.tryParse(value) == null) return 'Invalid year';
+                              if (int.tryParse(value) == null)
+                                return 'Invalid year';
                               return null;
                             },
                           ),
@@ -663,14 +746,20 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _histEndYearController,
-                            decoration: const InputDecoration(labelText: 'Hist End Year', border: OutlineInputBorder()),
+                            decoration: const InputDecoration(
+                                labelText: 'Hist End Year',
+                                border: OutlineInputBorder()),
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value!.isEmpty) return 'Enter year';
-                              if (int.tryParse(value) == null) return 'Invalid year';
-                              int startYear = int.tryParse(_histStartYearController.text) ?? 0;
+                              if (int.tryParse(value) == null)
+                                return 'Invalid year';
+                              int startYear =
+                                  int.tryParse(_histStartYearController.text) ??
+                                      0;
                               int endYear = int.tryParse(value) ?? 0;
-                              if (endYear < startYear) return 'End year must be >= start year';
+                              if (endYear < startYear)
+                                return 'End year must be >= start year';
                               return null;
                             },
                           ),
@@ -699,11 +788,13 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
               minChildSize: 0.1,
               maxChildSize: 0.9,
               expand: false,
-              builder: (BuildContext context, ScrollController scrollController) {
+              builder:
+                  (BuildContext context, ScrollController scrollController) {
                 return Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
@@ -736,9 +827,13 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                             children: [
                               Text(
                                 'Best Route (${_predictionResult!.vehicleType.toUpperCase()}):',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color:
+                                  Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                               const Divider(),
@@ -761,10 +856,16 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               const SizedBox(height: 10),
                               Text(
                                 'Detailed Impacts:',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
-                              ..._predictionResult!.bestRoute.detailedImpacts.entries.map((entry) =>
-                                  Text('${entry.key.replaceAll('_', ' ')}: ${entry.value}')).toList(),
+                              ..._predictionResult!.bestRoute.detailedImpacts
+                                  .entries
+                                  .map((entry) => Text(
+                                  '${entry.key.replaceAll('_', ' ')}: ${entry.value}'))
+                                  .toList(),
                             ],
                           ),
                         ),
@@ -779,9 +880,14 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               children: [
                                 Text(
                                   'Alternative Route:',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.secondary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .secondary,
                                   ),
                                 ),
                                 const Divider(),
@@ -804,10 +910,16 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                                 const SizedBox(height: 10),
                                 Text(
                                   'Detailed Impacts:',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
-                                ..._predictionResult!.notBestRoute!.detailedImpacts.entries.map((entry) =>
-                                    Text('${entry.key.replaceAll('_', ' ')}: ${entry.value}')).toList(),
+                                ..._predictionResult!
+                                    .notBestRoute!.detailedImpacts.entries
+                                    .map((entry) => Text(
+                                    '${entry.key.replaceAll('_', ' ')}: ${entry.value}'))
+                                    .toList(),
                               ],
                             ),
                           ),
@@ -824,7 +936,8 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green.shade700,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 15),
                                 textStyle: const TextStyle(fontSize: 18),
                               ),
                             ),
@@ -833,10 +946,14 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Comprehensive Analysis:',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      if (_predictionResult!.simulatedCurrentAccidents.isNotEmpty)
+                      if (_predictionResult!
+                          .simulatedCurrentAccidents.isNotEmpty)
                         Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Padding(
@@ -846,24 +963,36 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               children: [
                                 Text(
                                   'Current Incidents:',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 const Divider(),
-                                ..._predictionResult!.simulatedCurrentAccidents.map((accident) => Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                ..._predictionResult!.simulatedCurrentAccidents
+                                    .map((accident) => Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                                   children: [
-                                    Text('Type: ${accident.type ?? 'N/A'} (Severity: ${accident.severity ?? 'N/A'})'),
-                                    Text('Location: ${accident.latitude?.toStringAsFixed(4) ?? 'N/A'}, ${accident.longitude?.toStringAsFixed(4) ?? 'N/A'}'),
-                                    Text('Delay: ${accident.simulatedDelayMinutes?.toStringAsFixed(1) ?? 'N/A'} min'),
-                                    Text('Description: ${accident.description ?? 'N/A'}'),
+                                    Text(
+                                        'Type: ${accident.type ?? 'N/A'} (Severity: ${accident.severity ?? 'N/A'})'),
+                                    Text(
+                                        'Location: ${accident.latitude?.toStringAsFixed(4) ?? 'N/A'}, ${accident.longitude?.toStringAsFixed(4) ?? 'N/A'}'),
+                                    Text(
+                                        'Delay: ${accident.simulatedDelayMinutes?.toStringAsFixed(1) ?? 'N/A'} min'),
+                                    Text(
+                                        'Description: ${accident.description ?? 'N/A'}'),
                                     const SizedBox(height: 8),
                                   ],
-                                )).toList(),
+                                ))
+                                    .toList(),
                               ],
                             ),
                           ),
                         ),
-                      if (_predictionResult!.simulatedHistoricalAccidents.isNotEmpty)
+                      if (_predictionResult!
+                          .simulatedHistoricalAccidents.isNotEmpty)
                         Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Padding(
@@ -873,21 +1002,34 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               children: [
                                 Text(
                                   'Historical Incidents (${_predictionResult!.historicalYearRange.first.toString() ?? 'N/A'}-${_predictionResult!.historicalYearRange.last.toString() ?? 'N/A'}):',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 const Divider(),
-                                ..._predictionResult!.simulatedHistoricalAccidents.map((accident) => Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                ..._predictionResult!
+                                    .simulatedHistoricalAccidents
+                                    .map((accident) => Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                                   children: [
-                                    Text('Type: ${accident.type ?? 'N/A'} (Severity: ${accident.severity ?? 'N/A'})'),
-                                    Text('Location: ${accident.locationName ?? 'N/A'} (${accident.year ?? 'N/A'})'),
-                                    Text('Vehicles Involved: ${accident.involvedVehicleType ?? 'N/A'}'),
-                                    Text('Incident Count: ${accident.simulatedIncidentCount?.toString() ?? 'N/A'}'),
+                                    Text(
+                                        'Type: ${accident.type ?? 'N/A'} (Severity: ${accident.severity ?? 'N/A'})'),
+                                    Text(
+                                        'Location: ${accident.locationName ?? 'N/A'} (${accident.year ?? 'N/A'})'),
+                                    Text(
+                                        'Vehicles Involved: ${accident.involvedVehicleType ?? 'N/A'}'),
+                                    Text(
+                                        'Incident Count: ${accident.simulatedIncidentCount?.toString() ?? 'N/A'}'),
                                     Text('Date: ${accident.date ?? 'N/A'}'),
-                                    Text('Description: ${accident.description ?? 'N/A'}'),
+                                    Text(
+                                        'Description: ${accident.description ?? 'N/A'}'),
                                     const SizedBox(height: 8),
                                   ],
-                                )).toList(),
+                                ))
+                                    .toList(),
                               ],
                             ),
                           ),
@@ -902,21 +1044,32 @@ class _RouteOptimizerScreenState extends State<RouteOptimizerScreen> {
                               children: [
                                 Text(
                                   'All Routes Overview:',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 const Divider(),
-                                ..._predictionResult!.allRoutes.map((route) => Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                ..._predictionResult!.allRoutes
+                                    .map((route) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                     children: [
-                                      Text('Route ID: ${route.routeId ?? 'N/A'}'),
-                                      Text('Adjusted Duration: ${route.adjustedDurationMinutes?.toStringAsFixed(2) ?? 'N/A'} min'),
-                                      Text('Score: ${route.score?.toStringAsFixed(1) ?? 'N/A'}'),
+                                      Text(
+                                          'Route ID: ${route.routeId ?? 'N/A'}'),
+                                      Text(
+                                          'Adjusted Duration: ${route.adjustedDurationMinutes?.toStringAsFixed(2) ?? 'N/A'} min'),
+                                      Text(
+                                          'Score: ${route.score?.toStringAsFixed(1) ?? 'N/A'}'),
                                       const SizedBox(height: 4),
                                     ],
                                   ),
-                                )).toList(),
+                                ))
+                                    .toList(),
                               ],
                             ),
                           ),
