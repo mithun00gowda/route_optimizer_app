@@ -6,7 +6,7 @@ import 'package:optiroute/services/auth_service.dart'; // Import AuthService
 import 'package:provider/provider.dart'; // Import provider
 import 'package:optiroute/screens/login_screen.dart'; // Import LoginScreen
 import 'package:optiroute/screens/new_page_screen.dart'; // Import the new page screen
-
+import 'package:optiroute/screens/settings_screen.dart'; // Import the settings screen
 import 'admin/admin_dashboard_screen.dart'; // Import AdminDashboardScreen
 
 class HomeScreen extends StatelessWidget {
@@ -52,23 +52,26 @@ class HomeScreen extends StatelessWidget {
                 context: context,
                 icon: Icons.alt_route,
                 title: 'Calculate Safe Route',
-                description: 'Find the most optimized and safest route for your journey.',
+                description:
+                'Find the most optimized and safest route for your journey.',
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const RouteOptimizerScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const RouteOptimizerScreen()),
                   );
                 },
                 color: colorScheme.primary,
               ),
               const SizedBox(height: 16),
-        
+
               // Card for "Report Accident or Road Jam"
               _buildServiceCard(
                 context: context,
                 icon: Icons.warning_amber_rounded,
                 title: 'Report Incident',
-                description: 'Help others by reporting accidents, road jams, or hazards.',
+                description:
+                'Help others by reporting accidents, road jams, or hazards.',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -78,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                 color: colorScheme.secondary,
               ),
               const SizedBox(height: 16),
-        
+
               // Card for "Explore New Feature" (My Reported Incidents)
               _buildServiceCard(
                 context: context,
@@ -94,7 +97,23 @@ class HomeScreen extends StatelessWidget {
                 color: colorScheme.tertiary,
               ),
               const SizedBox(height: 16),
-        
+
+              // Settings Card
+              _buildServiceCard(
+                context: context,
+                icon: Icons.settings,
+                title: 'Settings',
+                description: 'Configure the application settings.',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+
               // Admin Dashboard Card (only visible to admins)
               if (isAdmin) // Conditionally render for admin users
                 _buildServiceCard(
@@ -105,7 +124,8 @@ class HomeScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const AdminDashboardScreen()),
                     );
                   },
                   color: Colors.deepPurple, // Distinct color for admin
@@ -153,7 +173,10 @@ class HomeScreen extends StatelessWidget {
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 12),

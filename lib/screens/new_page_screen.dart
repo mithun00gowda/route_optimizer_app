@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:optiroute/services/api_services.dart'; // Import ApiService
 import 'package:optiroute/models/models.dart'; // Import models (which now exports ReportedAccident)
-import 'package:optiroute/constants/strings.dart'; // For BASE_URL
 import 'package:optiroute/screens/image_view_screen.dart';
 
-import '../models/reported_accident.dart' show ReportedAccident; // Import the new image viewer screen
+import '../models/reported_accident.dart'
+    show ReportedAccident; // Import the new image viewer screen
 
 class NewPageScreen extends StatefulWidget {
   const NewPageScreen({super.key});
@@ -21,7 +21,8 @@ class _NewPageScreenState extends State<NewPageScreen> {
   @override
   void initState() {
     super.initState();
-    _reportedAccidentsFuture = ApiService.getCurrentUserReportedAccidents(context);
+    _reportedAccidentsFuture =
+        ApiService.getCurrentUserReportedAccidents(context);
   }
 
   @override
@@ -43,7 +44,8 @@ class _NewPageScreenState extends State<NewPageScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 60),
                     const SizedBox(height: 10),
                     Text(
                       'Error loading reports: ${snapshot.error}',
@@ -54,7 +56,9 @@ class _NewPageScreenState extends State<NewPageScreen> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _reportedAccidentsFuture = ApiService.getCurrentUserReportedAccidents(context);
+                          _reportedAccidentsFuture =
+                              ApiService.getCurrentUserReportedAccidents(
+                                  context);
                         });
                       },
                       child: const Text('Retry'),
@@ -89,7 +93,8 @@ class _NewPageScreenState extends State<NewPageScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       textStyle: const TextStyle(fontSize: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -109,7 +114,8 @@ class _NewPageScreenState extends State<NewPageScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16.0),
                   elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -117,7 +123,10 @@ class _NewPageScreenState extends State<NewPageScreen> {
                       children: [
                         Text(
                           'Incident Type: ${report.incidentType}',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
@@ -130,8 +139,11 @@ class _NewPageScreenState extends State<NewPageScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Status: ${report.status}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: report.status == 'resolved' ? Colors.green : Colors.orange,
+                          style:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: report.status == 'resolved'
+                                ? Colors.green
+                                : Colors.orange,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -150,7 +162,10 @@ class _NewPageScreenState extends State<NewPageScreen> {
                             children: [
                               Text(
                                 'Uploaded Media:',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),
                               SizedBox(
@@ -159,60 +174,118 @@ class _NewPageScreenState extends State<NewPageScreen> {
                                   scrollDirection: Axis.horizontal,
                                   itemCount: report.mediaPaths.length,
                                   itemBuilder: (context, mediaIndex) {
-                                    final mediaPath = report.mediaPaths[mediaIndex];
-                                    final mediaUrl = ApiService.getMediaFileUrl(mediaPath);
-                                    final isImage = mediaPath.toLowerCase().endsWith('.jpg') ||
-                                        mediaPath.toLowerCase().endsWith('.jpeg') ||
-                                        mediaPath.toLowerCase().endsWith('.png');
-                                    final isVideo = mediaPath.toLowerCase().endsWith('.mp4') ||
-                                        mediaPath.toLowerCase().endsWith('.mov');
+                                    final mediaPath =
+                                    report.mediaPaths[mediaIndex];
+                                    final isImage = mediaPath
+                                        .toLowerCase()
+                                        .endsWith('.jpg') ||
+                                        mediaPath
+                                            .toLowerCase()
+                                            .endsWith('.jpeg') ||
+                                        mediaPath
+                                            .toLowerCase()
+                                            .endsWith('.png');
+                                    final isVideo = mediaPath
+                                        .toLowerCase()
+                                        .endsWith('.mp4') ||
+                                        mediaPath
+                                            .toLowerCase()
+                                            .endsWith('.mov');
 
                                     return Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
-                                      child: InkWell( // Make the media tappable
-                                        onTap: isImage // Only allow tap for images for now
-                                            ? () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => ImageViewScreen(imageUrl: mediaUrl),
-                                            ),
-                                          );
-                                        }
-                                            : null, // Disable tap for videos/other for now
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(8.0),
-                                          child: isImage
-                                              ? Image.network(
-                                            mediaUrl,
-                                            width: 150,
-                                            height: 150,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
+                                      padding:
+                                      const EdgeInsets.only(right: 8.0),
+                                      child: FutureBuilder<String>(
+                                        future:
+                                        ApiService.getMediaFileUrl(mediaPath),
+                                        builder: (context, urlSnapshot) {
+                                          if (urlSnapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const Center(
+                                                child:
+                                                CircularProgressIndicator());
+                                          }
+
+                                          if (urlSnapshot.hasError ||
+                                              !urlSnapshot.hasData) {
+                                            return Container(
+                                              width: 150,
+                                              height: 150,
+                                              color: Colors.grey[300],
+                                              child: Icon(Icons.broken_image,
+                                                  color: Colors.grey[600]),
+                                            );
+                                          }
+
+                                          final mediaUrl = urlSnapshot.data!;
+
+                                          return InkWell(
+                                            // Make the media tappable
+                                            onTap: isImage // Only allow tap for images for now
+                                                ? () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ImageViewScreen(
+                                                          imageUrl:
+                                                          mediaUrl),
+                                                ),
+                                              );
+                                            }
+                                                : null, // Disable tap for videos/other for now
+                                            child: ClipRRect(
+                                              borderRadius:
+                                              BorderRadius.circular(8.0),
+                                              child: isImage
+                                                  ? Image.network(
+                                                mediaUrl,
                                                 width: 150,
                                                 height: 150,
-                                                color: Colors.grey[300],
-                                                child: Icon(Icons.broken_image, color: Colors.grey[600]),
-                                              );
-                                            },
-                                          )
-                                              : isVideo
-                                              ? Container(
-                                            width: 150,
-                                            height: 150,
-                                            color: Colors.black,
-                                            child: const Center(
-                                              child: Icon(Icons.video_collection, color: Colors.white, size: 50),
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context,
+                                                    error, stackTrace) {
+                                                  return Container(
+                                                    width: 150,
+                                                    height: 150,
+                                                    color:
+                                                    Colors.grey[300],
+                                                    child: Icon(
+                                                        Icons
+                                                            .broken_image,
+                                                        color: Colors
+                                                            .grey[600]),
+                                                  );
+                                                },
+                                              )
+                                                  : isVideo
+                                                  ? Container(
+                                                width: 150,
+                                                height: 150,
+                                                color: Colors.black,
+                                                child: const Center(
+                                                  child: Icon(
+                                                      Icons
+                                                          .video_collection,
+                                                      color: Colors
+                                                          .white,
+                                                      size: 50),
+                                                ),
+                                              )
+                                                  : Container(
+                                                width: 150,
+                                                height: 150,
+                                                color:
+                                                Colors.grey[300],
+                                                child: Icon(
+                                                    Icons
+                                                        .insert_drive_file,
+                                                    color: Colors
+                                                        .grey[600]),
+                                              ),
                                             ),
-                                          )
-                                              : Container(
-                                            width: 150,
-                                            height: 150,
-                                            color: Colors.grey[300],
-                                            child: Icon(Icons.insert_drive_file, color: Colors.grey[600]),
-                                          ),
-                                        ),
+                                          );
+                                        },
                                       ),
                                     );
                                   },

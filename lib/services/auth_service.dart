@@ -45,12 +45,12 @@ class User {
 }
 
 class AuthService extends ChangeNotifier {
-  final String _baseUrl = StringsData.BASE_URL;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   User? _currentUser;
   bool _isLoading = true; // Start as true, as we immediately begin checking auth
-  late Future<void> _initializationFuture; // New: stores the initial check future
+  late Future<void>
+  _initializationFuture; // New: stores the initial check future
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
@@ -83,9 +83,11 @@ class AuthService extends ChangeNotifier {
             final user = await _fetchAndSetUser(newAccessToken, refreshToken);
             if (user != null) {
               _currentUser = user;
-              print('Auto-login successful with refreshed token for user: ${_currentUser!.username}');
+              print(
+                  'Auto-login successful with refreshed token for user: ${_currentUser!.username}');
             } else {
-              print('Failed to fetch user details after token refresh during auto-login. Logging out.');
+              print(
+                  'Failed to fetch user details after token refresh during auto-login. Logging out.');
               await _deleteTokens();
               _currentUser = null;
             }
@@ -116,7 +118,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-
   // This method is now only a getter for the initialization future.
   // The logic for checking auth happens inside _initializeAuth().
   Future<void> get checkAuthStatusFuture => _initializationFuture;
@@ -146,10 +147,12 @@ class AuthService extends ChangeNotifier {
     return {'access_token': accessToken, 'refresh_token': refreshToken};
   }
 
-  Future<User?> _fetchAndSetUser(String accessToken, String refreshToken) async {
+  Future<User?> _fetchAndSetUser(
+      String accessToken, String refreshToken) async {
     try {
+      final baseUrl = await StringsData.getBaseUrl();
       final response = await http.get(
-        Uri.parse('$_baseUrl/auth/me'),
+        Uri.parse('$baseUrl/auth/me'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
@@ -167,7 +170,8 @@ class AuthService extends ChangeNotifier {
           refreshToken: refreshToken,
         );
       } else {
-        print('Failed to fetch user details from /me: ${response.statusCode} ${response.body}');
+        print(
+            'Failed to fetch user details from /me: ${response.statusCode} ${response.body}');
         return null;
       }
     } catch (e) {
@@ -179,8 +183,9 @@ class AuthService extends ChangeNotifier {
   Future<String?> login(String username, String password) async {
     _setLoading(true);
     try {
+      final baseUrl = await StringsData.getBaseUrl();
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
+        Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': username,
@@ -214,7 +219,8 @@ class AuthService extends ChangeNotifier {
         return null; // Login successful
       } else {
         final Map<String, dynamic> errorData = json.decode(response.body);
-        return errorData['message'] ?? 'Login failed. Please check your credentials.';
+        return errorData['message'] ??
+            'Login failed. Please check your credentials.';
       }
     } catch (e) {
       return 'An error occurred during login: $e';
@@ -226,8 +232,9 @@ class AuthService extends ChangeNotifier {
   Future<String?> register(String username, String email, String password) async {
     _setLoading(true);
     try {
+      final baseUrl = await StringsData.getBaseUrl();
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/register'),
+        Uri.parse('$baseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': username,
@@ -257,8 +264,9 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
+      final baseUrl = await StringsData.getBaseUrl();
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/auth/refresh'),
+        Uri.parse('$baseUrl/api/auth/refresh'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_currentUser!.refreshToken}',
@@ -270,13 +278,15 @@ class AuthService extends ChangeNotifier {
         final String newAccessToken = responseData['access_token'];
 
         _currentUser = _currentUser!.copyWith(accessToken: newAccessToken);
-        await _secureStorage.write(key: 'jwt_access_token', value: newAccessToken);
+        await _secureStorage.write(
+            key: 'jwt_access_token', value: newAccessToken);
 
         notifyListeners();
         print('Access token refreshed successfully.');
         return newAccessToken;
       } else {
-        print('Failed to refresh token: ${response.statusCode} ${response.body}');
+        print(
+            'Failed to refresh token: ${response.statusCode} ${response.body}');
         await _deleteTokens();
         _currentUser = null;
         notifyListeners();

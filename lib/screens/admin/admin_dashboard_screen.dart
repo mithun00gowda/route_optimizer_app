@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:optiroute/services/api_services.dart';
-import 'package:optiroute/models/models.dart' as models; // Alias models to avoid conflict with 'User' in services
+import 'package:optiroute/models/models.dart'
+as models; // Alias models to avoid conflict with 'User' in services
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -63,7 +64,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const Icon(Icons.error_outline,
+                      color: Colors.red, size: 48),
                   const SizedBox(height: 10),
                   Text(
                     'Error loading overview data: ${snapshot.error}',
@@ -89,58 +91,88 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Key Metrics', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Key Metrics',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 20),
                 Wrap(
                   spacing: 20.0,
                   runSpacing: 20.0,
                   alignment: WrapAlignment.start,
                   children: [
-                    _buildStatCard('Total Users', overview.totalUsers.toString(), Icons.group, Colors.blue),
-                    _buildStatCard('Total Reported Accidents', overview.totalReportedAccidents.toString(), Icons.warning, Colors.orange),
-                    _buildStatCard('Recent Accidents (7 Days)', overview.recentReportedAccidents7Days.toString(), Icons.new_releases, Colors.red),
-                    _buildStatCard('Total Travel Logs', overview.totalTravelLogs.toString(), Icons.route, Colors.green),
-                    _buildStatCard('Current Simulated Accidents', overview.totalCurrentSimulatedAccidents.toString(), Icons.traffic, Colors.deepPurple),
-                    _buildStatCard('Historical Simulated Accidents', overview.totalHistoricalSimulatedAccidents.toString(), Icons.history, Colors.brown),
+                    _buildStatCard('Total Users', overview.totalUsers.toString(),
+                        Icons.group, Colors.blue),
+                    _buildStatCard(
+                        'Total Reported Accidents',
+                        overview.totalReportedAccidents.toString(),
+                        Icons.warning,
+                        Colors.orange),
+                    _buildStatCard(
+                        'Recent Accidents (7 Days)',
+                        overview.recentReportedAccidents7Days.toString(),
+                        Icons.new_releases,
+                        Colors.red),
+                    _buildStatCard('Total Travel Logs',
+                        overview.totalTravelLogs.toString(), Icons.route, Colors.green),
+                    _buildStatCard(
+                        'Current Simulated Accidents',
+                        overview.totalCurrentSimulatedAccidents.toString(),
+                        Icons.traffic,
+                        Colors.deepPurple),
+                    _buildStatCard(
+                        'Historical Simulated Accidents',
+                        overview.totalHistoricalSimulatedAccidents.toString(),
+                        Icons.history,
+                        Colors.brown),
                   ],
                 ),
                 const SizedBox(height: 40),
-                Text('Accidents by Status', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Accidents by Status',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 10),
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      children: overview.reportedAccidentsByStatus.entries.map((entry) =>
-                          ListTile(
-                            leading: _getStatusIcon(entry.key),
-                            title: Text(
-                              '${entry.key}: ${entry.value}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          )).toList(),
+                      children: overview.reportedAccidentsByStatus.entries
+                          .map((entry) => ListTile(
+                        leading: _getStatusIcon(entry.key),
+                        title: Text(
+                          '${entry.key}: ${entry.value}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ))
+                          .toList(),
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
-                Text('Users by Role', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Users by Role',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 10),
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      children: overview.usersByRole.entries.map((entry) =>
-                          ListTile(
-                            leading: Icon(entry.key == 'admin' ? Icons.security : Icons.person, color: Theme.of(context).colorScheme.secondary),
-                            title: Text(
-                              '${entry.key}: ${entry.value}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          )).toList(),
+                      children: overview.usersByRole.entries
+                          .map((entry) => ListTile(
+                        leading: Icon(
+                            entry.key == 'admin'
+                                ? Icons.security
+                                : Icons.person,
+                            color:
+                            Theme.of(context).colorScheme.secondary),
+                        title: Text(
+                          '${entry.key}: ${entry.value}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ))
+                          .toList(),
                     ),
                   ),
                 ),
@@ -152,7 +184,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -187,12 +220,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Icon _getStatusIcon(String status) {
     switch (status.toLowerCase()) {
-      case 'reported': return Icon(Icons.info_outline, color: Colors.blue.shade700);
-      case 'investigating': return Icon(Icons.search, color: Colors.orange.shade700);
-      case 'resolved': return Icon(Icons.check_circle_outline, color: Colors.green.shade700);
-      case 'duplicate': return Icon(Icons.copy, color: Colors.grey.shade700);
-      case 'rejected': return Icon(Icons.cancel_outlined, color: Colors.red.shade700);
-      default: return Icon(Icons.help_outline, color: Colors.grey.shade500);
+      case 'reported':
+        return Icon(Icons.info_outline, color: Colors.blue.shade700);
+      case 'investigating':
+        return Icon(Icons.search, color: Colors.orange.shade700);
+      case 'resolved':
+        return Icon(Icons.check_circle_outline, color: Colors.green.shade700);
+      case 'duplicate':
+        return Icon(Icons.copy, color: Colors.grey.shade700);
+      case 'rejected':
+        return Icon(Icons.cancel_outlined, color: Colors.red.shade700);
+      default:
+        return Icon(Icons.help_outline, color: Colors.grey.shade500);
     }
   }
 
@@ -204,7 +243,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(
-            child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+            child: Text('Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red)),
           );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text('No users found.'));
@@ -215,21 +255,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('User Management', style: Theme.of(context).textTheme.headlineSmall),
+                Text('User Management',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 20),
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: PaginatedDataTable(
-                      header: Text('User List', style: Theme.of(context).textTheme.titleLarge),
+                      header: Text('User List',
+                          style: Theme.of(context).textTheme.titleLarge),
                       columns: const [
-                        DataColumn(label: Text('Username', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Created At', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Username',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Email',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Role',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Created At',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Actions',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
                       ],
                       source: UserDataSource(users, context, _loadData),
                       rowsPerPage: users.length < 10 ? users.length : 10,
@@ -253,7 +306,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(
-            child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+            child: Text('Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red)),
           );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text('No reported incidents found.'));
@@ -264,26 +318,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Incident Reports', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Incident Reports',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 20),
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: PaginatedDataTable(
-                      header: Text('Incident List', style: Theme.of(context).textTheme.titleLarge),
+                      header: Text('Incident List',
+                          style: Theme.of(context).textTheme.titleLarge),
                       columns: const [
-                        DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Reporter', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Location', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Media', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Reported At', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('ID',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Reporter',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Type',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Status',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Location',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Media',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Reported At',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Actions',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
                       ],
-                      source: ReportedAccidentDataSource(incidents, context, _loadData),
+                      source:
+                      ReportedAccidentDataSource(incidents, context, _loadData),
                       rowsPerPage: incidents.length < 10 ? incidents.length : 10,
                       showCheckboxColumn: false,
                     ),
@@ -303,7 +377,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Travel Analysis', style: Theme.of(context).textTheme.headlineSmall),
+          Text('Travel Analysis',
+              style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 20),
           FutureBuilder<List<models.TravelRate>>(
             future: _travelRatesFuture,
@@ -312,7 +387,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 return Center(
-                  child: Text('Error loading user travel rates: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                  child: Text(
+                      'Error loading user travel rates: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red)),
                 );
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(child: Text('No user travel rates data.'));
@@ -321,23 +398,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('User Travel Rates', style: Theme.of(context).textTheme.titleLarge),
+                    Text('User Travel Rates',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 10),
                     Card(
                       elevation: 6,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: PaginatedDataTable(
                           columns: const [
-                            DataColumn(label: Text('Username', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Total Trips', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Total Distance (km)', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Total Duration (hrs)', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Avg. Score', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Username',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Total Trips',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Total Distance (km)',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Total Duration (hrs)',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Avg. Score',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
                           ],
                           source: TravelRateDataSource(travelRates),
-                          rowsPerPage: travelRates.length < 10 ? travelRates.length : 10,
+                          rowsPerPage:
+                          travelRates.length < 10 ? travelRates.length : 10,
                           showCheckboxColumn: false,
                         ),
                       ),
@@ -355,7 +450,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 return Center(
-                  child: Text('Error loading daily trips: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                  child: Text('Error loading daily trips: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red)),
                 );
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(child: Text('No daily trips data.'));
@@ -364,21 +460,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Daily Trips Overview', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Daily Trips Overview',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 10),
                     Card(
                       elevation: 6,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: PaginatedDataTable(
                           columns: const [
-                            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Trip Count', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Total Distance (km)', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Date',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Trip Count',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                            DataColumn(
+                                label: Text('Total Distance (km)',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
                           ],
                           source: DailyTripDataSource(dailyTrips),
-                          rowsPerPage: dailyTrips.length < 10 ? dailyTrips.length : 10,
+                          rowsPerPage:
+                          dailyTrips.length < 10 ? dailyTrips.length : 10,
                           showCheckboxColumn: false,
                         ),
                       ),
@@ -415,7 +523,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               await Provider.of<AuthService>(context, listen: false).logout();
               if (mounted) {
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const AdminLoginScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const AdminLoginScreen()),
                 );
               }
               Fluttertoast.showToast(msg: 'Logged out successfully!');
@@ -432,7 +541,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             width: 250,
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              border: Border(right: BorderSide(color: Colors.grey.shade300, width: 0.5)),
+              border:
+              Border(right: BorderSide(color: Colors.grey.shade300, width: 0.5)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -452,11 +562,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.admin_panel_settings, color: colorScheme.onPrimary, size: 48),
+                      Icon(Icons.admin_panel_settings,
+                          color: colorScheme.onPrimary, size: 48),
                       const SizedBox(height: 8),
                       Text(
                         'Admin Panel',
-                        style: textTheme.headlineSmall?.copyWith(color: colorScheme.onPrimary),
+                        style: textTheme.headlineSmall
+                            ?.copyWith(color: colorScheme.onPrimary),
                       ),
                     ],
                   ),
@@ -493,11 +605,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+        color: isSelected
+            ? colorScheme.primary.withOpacity(0.1)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurface),
+        leading: Icon(icon,
+            color: isSelected ? colorScheme.primary : colorScheme.onSurface),
         title: Text(
           title,
           style: TextStyle(
@@ -531,7 +646,8 @@ class UserDataSource extends DataTableSource {
       DataCell(Text(user.username)),
       DataCell(Text(user.email)),
       DataCell(Text(user.role)),
-      DataCell(Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(user.createdAt)))),
+      DataCell(
+          Text(DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(user.createdAt)))),
       DataCell(Row(
         children: [
           IconButton(
@@ -587,11 +703,15 @@ class UserDataSource extends DataTableSource {
                 Navigator.of(context).pop();
                 if (selectedRole != null && selectedRole != user.role) {
                   try {
-                    await ApiService.updateUserRole(_context, user.publicId, selectedRole!);
-                    Fluttertoast.showToast(msg: 'User role updated successfully!');
+                    await ApiService.updateUserRole(
+                        _context, user.publicId, selectedRole!);
+                    Fluttertoast.showToast(
+                        msg: 'User role updated successfully!');
                     _refreshData();
                   } catch (e) {
-                    Fluttertoast.showToast(msg: 'Failed to update role: $e', backgroundColor: Colors.red);
+                    Fluttertoast.showToast(
+                        msg: 'Failed to update role: $e',
+                        backgroundColor: Colors.red);
                   }
                 }
               },
@@ -608,7 +728,8 @@ class UserDataSource extends DataTableSource {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete user "${user.username}"? This action cannot be undone.'),
+          content: Text(
+              'Are you sure you want to delete user "${user.username}"? This action cannot be undone.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -624,7 +745,9 @@ class UserDataSource extends DataTableSource {
                   Fluttertoast.showToast(msg: 'User deleted successfully!');
                   _refreshData();
                 } catch (e) {
-                  Fluttertoast.showToast(msg: 'Failed to delete user: $e', backgroundColor: Colors.red);
+                  Fluttertoast.showToast(
+                      msg: 'Failed to delete user: $e',
+                      backgroundColor: Colors.red);
                 }
               },
             ),
@@ -643,19 +766,26 @@ class ReportedAccidentDataSource extends DataTableSource {
   ReportedAccidentDataSource(this._incidents, this._context, this._refreshData);
 
   // New method to show media viewer dialog
-  void _showMediaViewerDialog(List<String> mediaPaths) {
+  void _showMediaViewerDialog(List<String> mediaPaths) async {
     if (mediaPaths.isEmpty) {
       Fluttertoast.showToast(msg: 'No media available for this incident.');
       return;
+    }
+
+    final List<String> fullMediaUrls = [];
+    for (var path in mediaPaths) {
+      fullMediaUrls.add(await ApiService.getMediaFileUrl(path));
     }
 
     showDialog(
       context: _context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600), // Max size for the dialog
+            constraints:
+            const BoxConstraints(maxWidth: 800, maxHeight: 600), // Max size for the dialog
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -668,9 +798,9 @@ class ReportedAccidentDataSource extends DataTableSource {
                 ),
                 Expanded(
                   child: PageView.builder(
-                    itemCount: mediaPaths.length,
+                    itemCount: fullMediaUrls.length,
                     itemBuilder: (context, index) {
-                      final mediaUrl = mediaPaths[index];
+                      final mediaUrl = fullMediaUrls[index];
                       // Assuming media are images. For videos, you'd need a video player.
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -681,7 +811,8 @@ class ReportedAccidentDataSource extends DataTableSource {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                const Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey),
                                 Text('Failed to load image: $error'),
                               ],
                             ),
@@ -690,8 +821,10 @@ class ReportedAccidentDataSource extends DataTableSource {
                             if (loadingProgress == null) return child;
                             return Center(
                               child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                value: loadingProgress.expectedTotalBytes !=
+                                    null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
                                     : null,
                               ),
                             );
@@ -701,11 +834,11 @@ class ReportedAccidentDataSource extends DataTableSource {
                     },
                   ),
                 ),
-                if (mediaPaths.length > 1)
+                if (fullMediaUrls.length > 1)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: Text(
-                      '${1}/${mediaPaths.length}', // Current page indicator (adjust to dynamic later if needed)
+                      '${1}/${fullMediaUrls.length}', // Current page indicator (adjust to dynamic later if needed)
                       style: Theme.of(_context).textTheme.bodySmall,
                     ),
                   ),
@@ -730,7 +863,8 @@ class ReportedAccidentDataSource extends DataTableSource {
           value: incident.status,
           items: const [
             DropdownMenuItem(value: 'reported', child: Text('Reported')),
-            DropdownMenuItem(value: 'investigating', child: Text('Investigating')),
+            DropdownMenuItem(
+                value: 'investigating', child: Text('Investigating')),
             DropdownMenuItem(value: 'resolved', child: Text('Resolved')),
             DropdownMenuItem(value: 'duplicate', child: Text('Duplicate')),
             DropdownMenuItem(value: 'rejected', child: Text('Rejected')),
@@ -738,17 +872,21 @@ class ReportedAccidentDataSource extends DataTableSource {
           onChanged: (String? newStatus) async {
             if (newStatus != null && newStatus != incident.status) {
               try {
-                await ApiService.updateReportedAccidentStatus(_context, incident.id, newStatus);
+                await ApiService.updateReportedAccidentStatus(
+                    _context, incident.id, newStatus);
                 Fluttertoast.showToast(msg: 'Incident status updated!');
                 _refreshData();
               } catch (e) {
-                Fluttertoast.showToast(msg: 'Failed to update status: $e', backgroundColor: Colors.red);
+                Fluttertoast.showToast(
+                    msg: 'Failed to update status: $e',
+                    backgroundColor: Colors.red);
               }
             }
           },
         ),
       ),
-      DataCell(Text('${incident.latitude.toStringAsFixed(4)}, ${incident.longitude.toStringAsFixed(4)}')),
+      DataCell(Text(
+          '${incident.latitude.toStringAsFixed(4)}, ${incident.longitude.toStringAsFixed(4)}')),
       DataCell(
         incident.mediaPaths.isNotEmpty
             ? Row(
@@ -758,7 +896,8 @@ class ReportedAccidentDataSource extends DataTableSource {
             IconButton(
               icon: const Icon(Icons.visibility, size: 20),
               onPressed: () {
-                _showMediaViewerDialog(incident.mediaPaths); // Call the new method
+                _showMediaViewerDialog(
+                    incident.mediaPaths); // Call the new method
               },
               tooltip: 'View Media',
             ),
@@ -766,7 +905,8 @@ class ReportedAccidentDataSource extends DataTableSource {
         )
             : const Text('None'),
       ),
-      DataCell(Text(DateFormat('yyyy-MM-dd').format(DateTime.parse(incident.reportedAt)))),
+      DataCell(Text(
+          DateFormat('yyyy-MM-dd').format(DateTime.parse(incident.reportedAt)))),
       DataCell(Row(
         children: [
           IconButton(
@@ -794,7 +934,8 @@ class ReportedAccidentDataSource extends DataTableSource {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete incident ID ${incident.id}? This action cannot be undone.'),
+          content: Text(
+              'Are you sure you want to delete incident ID ${incident.id}? This action cannot be undone.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -806,11 +947,15 @@ class ReportedAccidentDataSource extends DataTableSource {
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
-                  await ApiService.deleteReportedAccident(_context, incident.id);
-                  Fluttertoast.showToast(msg: 'Incident deleted successfully!');
+                  await ApiService.deleteReportedAccident(
+                      _context, incident.id);
+                  Fluttertoast.showToast(
+                      msg: 'Incident deleted successfully!');
                   _refreshData();
                 } catch (e) {
-                  Fluttertoast.showToast(msg: 'Failed to delete incident: $e', backgroundColor: Colors.red);
+                  Fluttertoast.showToast(
+                      msg: 'Failed to delete incident: $e',
+                      backgroundColor: Colors.red);
                 }
               },
             ),

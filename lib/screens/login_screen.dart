@@ -1,6 +1,9 @@
+// lib/screens/login_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:optiroute/screens/homescreen.dart';
 import 'package:optiroute/screens/register_screen.dart';
+import 'package:optiroute/screens/settings_screen.dart';
 import 'package:optiroute/services/auth_service.dart';
 import 'package:provider/provider.dart';
 
@@ -57,6 +60,17 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('Login'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            tooltip: 'Settings',
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -153,7 +167,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const RegisterScreen()),
                     );
                   },
                   child: Text(

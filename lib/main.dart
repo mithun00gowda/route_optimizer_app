@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:optiroute/screens/admin/admin_dashboard_screen.dart'; // Admin Dashboard
+import 'package:optiroute/screens/homescreen.dart';
 import 'package:provider/provider.dart';
 
 import 'package:optiroute/screens/admin/admin_login_screen.dart'; // Admin Login for Web
@@ -96,7 +97,7 @@ class MyApp extends StatelessWidget {
               builder: (context, authService, child) {
                 if (authService.isAuthenticated) {
                   // Authenticated mobile user goes to Mobile Dashboard
-                  return const Text("Mobile Dashboard (Implement your mobile main screen here)");
+                  return const HomeScreen();
                 } else {
                   // Unauthenticated mobile user goes to the Mobile Login Screen
                   return const LoginScreen(); // <-- CHANGED: Direct to LoginScreen for mobile
